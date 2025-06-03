@@ -74,7 +74,7 @@ Try OpenLearn here:
 | AI & Voice   | OpenAI, Whisper, Coqui TTS       |
 | Animation    | Three.js, D3.js (for simulations)|
 | Database     | PostgreSQL                       |
-| Hosting      | Linode,Netlify    |
+| Hosting      | Linode,Cloudflare    |
 
 ---
 
