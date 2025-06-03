@@ -6,6 +6,7 @@ import { getRedirectUrl } from "../utils/urlUtils";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Create the auth context
@@ -30,22 +31,24 @@ export const AuthProvider = ({ children }) => {
       try {
         setIsLoading(true);
 
-        // Check active session
+        // Use getSession instead of getUser to avoid AuthSessionMissingError
         const {
-          data: { user },
+          data: { session },
           error,
-        } = await supabase.auth.getUser();
+        } = await supabase.auth.getSession();
 
         if (error) {
           throw error;
         }
 
-        if (user) {
-          setUser(user);
+        if (session?.user) {
+          setUser(session.user);
+        } else {
+          setUser(null);
         }
       } catch (error) {
-        console.error("Error getting user:", error);
         setError(error.message);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -131,11 +134,24 @@ export const AuthProvider = ({ children }) => {
         },
       });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        throw error;
+      }
+      
+      // Return both the data and the user object for better handling in the UI
+      return {
+        user: data.user,
+        session: data.session,
+        provider: data.provider,
+        url: data.url,
+        email: data.user?.email,
+        error: null
+      };
     } catch (error) {
-      setError(error.message);
-      throw error;
+      console.error('Signup error:', error);
+      const errorMessage = error.error_description || error.message || 'An error occurred during signup';
+      setError(errorMessage);
+      return { error: errorMessage };
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +182,7 @@ export const AuthProvider = ({ children }) => {
       setError(null);
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: getRedirectUrl("/auth/reset-password"),
+        redirectTo: getRedirectUrl("/#/auth/reset-password"),
       });
 
       if (error) throw error;
